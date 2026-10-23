@@ -6,10 +6,10 @@ const APIFY_BASE_URL = '/api/apify/v2';
 
 export const SCRAPER_PRESETS = [
   {
-    id: 'apify~google-maps-scraper',
+    id: 'johnvc~google-maps-places-api',
     name: 'Google Maps Scraper',
-    description: 'The official Apify scraper for Google Maps leads.',
-    limitKey: 'maxResults',
+    description: 'Google Maps place listings for lead generation.',
+    limitKey: 'maxResultsPerSearch',
     defaultInput: {
       language: 'en',
     }
@@ -82,7 +82,20 @@ export const apifyService = {
     const url = `${APIFY_BASE_URL}/datasets/${datasetId}/items?token=${token}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch dataset items');
-    return await response.json();
+    const items = await response.json();
+    if (!Array.isArray(items)) return items;
+    return items
+      .map((item) => {
+        if (!item || item.free_tier_notice) return null;
+        return {
+          ...item,
+          title: item.title || item.name,
+          phone: item.phone || item.phoneNumber,
+          totalScore: item.totalScore ?? item.rating,
+          stars: item.stars ?? item.rating ?? item.totalScore,
+        };
+      })
+      .filter(Boolean);
   },
 
   /**
