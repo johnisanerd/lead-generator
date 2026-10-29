@@ -46,12 +46,11 @@ const App = () => {
       
       const input = {
         ...activePreset?.defaultInput,
-        searchStrings: [query],
+        searchTerms: [query],
         [(activePreset?.limitKey || 'maxResults')]: config.maxResults,
       };
 
       // Add additional fields
-      if (config.countryCode) input.country = config.countryCode;
       if (config.dryRun) input.dryRun = true;
 
       const runResponse = await apifyService.startRun(config.token, config.actorId, input);
