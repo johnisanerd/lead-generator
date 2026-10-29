@@ -6,10 +6,10 @@ const APIFY_BASE_URL = '/api/apify/v2';
 
 export const SCRAPER_PRESETS = [
   {
-    id: 'apify~google-maps-scraper',
-    name: 'Google Maps Scraper',
-    description: 'The official Apify scraper for Google Maps leads.',
-    limitKey: 'maxResults',
+    id: 'johnvc~google-maps-places-api',
+    name: 'Google Maps Places',
+    description: 'Google Maps places search for leads.',
+    limitKey: 'maxResultsPerSearch',
     defaultInput: {
       language: 'en',
     }
@@ -20,7 +20,7 @@ export const apifyService = {
   /**
    * Starts a run for a given actor
    * @param {string} token - Apify API Token
-   * @param {string} actorId - Actor ID (e.g. compass/google-maps-scraper)
+   * @param {string} actorId - Actor ID (e.g. johnvc/google-maps-places-api)
    * @param {object} input - Actor input configuration
    * @returns {Promise<object>} - Run object
    */
@@ -108,7 +108,22 @@ export const apifyService = {
       throw new Error(`Run ended with status: ${run.status}`);
     }
 
-    return await this.getDatasetItems(token, run.defaultDatasetId);
+    const items = await this.getDatasetItems(token, run.defaultDatasetId);
+
+    // Map the Actor's fields to the names the table and CSV export read
+    return items
+      .filter(item => !item.error_message)
+      .map(item => ({
+        title: item.title,
+        name: item.title,
+        stars: item.rating,
+        totalScore: item.rating,
+        phone: item.phoneNumber,
+        website: item.website,
+        categoryName: item.type,
+        address: item.address,
+        url: item.cid ? `https://maps.google.com/?cid=${item.cid}` : undefined,
+      }));
   },
 
   /**
